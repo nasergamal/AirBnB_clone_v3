@@ -46,10 +46,10 @@ def create_user():
     if 'password' not in new_user:
         abort(400, 'Missing password')
 
-    User = User(**new_user)
-    storage.new(User)
+    user = User(**new_user)
+    storage.new(user)
     storage.save()
-    return jsonify(User.to_dict()), 201
+    return jsonify(user.to_dict()), 201
 
 
 @app_views.route('/users/<user_id>', methods=['PUT'], strict_slashes=False)
@@ -64,7 +64,7 @@ def update_user(user_id):
         abort(400, "Not a JSON")
 
     for key, value in req.items():
-        if key not in ['id', 'email', 'created_at', 'updated_at']:
+        if key not in ['id', 'created_at', 'updated_at']:
             setattr(user, key, value)
 
     storage.save()

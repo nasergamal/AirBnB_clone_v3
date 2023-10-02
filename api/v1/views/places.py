@@ -83,8 +83,51 @@ def update_place(place_id):
         abort(400, "Not a JSON")
 
     for key, value in req.items():
-        if key not in ['id', 'user_id', 'city_id', 'created_at', 'updated_at']:
+        if key not in ['id', 'created_at', 'updated_at']:
             setattr(place, key, value)
 
     storage.save()
     return jsonify(place.to_dict()), 200
+
+
+@app_views.route('/places_search/',
+                 methods=['POST'], strict_slashes=False)
+def place_search():
+    '''retrieve specific places based on input'''
+    content = request.get_json()
+    if content is None:
+        return make_response(jsonify({"error": "Not a JSON"}), 400)
+    places_list = []
+    if not content or not len(content):
+        places_list = [di for di in storage.all(Place).values()]
+
+    if "states" in content:
+        for st_id in content['states']:
+            di = storage.get(State, st_id)
+            if di:
+                for city in di.cities:
+                    for place in city.places:
+                        places_list.append(place)
+
+    if "cities" in content:
+        for city_id in content['cities']:
+            di = storage.get(City, city_id)
+            if di:
+                for place in di.places:
+                    if place not in places_list:
+                        places_list.append(place)
+
+    if "amenities" in content:
+        if not places_list:
+            places_list = [di for di in storage.all(Place).values()]
+        amenities_list = [storage.get(Amenity, amenity_id) for
+                          amenity_id in content['amenities']]
+        places_list = [place for place in places_list if
+                       all([am in place.amenities for am in amenities_list])]
+
+    final_list = []
+    for place in places_list:
+        di = place.to_dict()
+        di.pop('amenities', None)
+        final_list.append(di)
+    return jsonify(final_list)
