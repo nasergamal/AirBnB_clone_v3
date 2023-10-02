@@ -2,7 +2,7 @@
 """
 This script Desribes the places view for the API
 """
-from flask import abort, jsonify, request
+from flask import abort, jsonify, request, make_response
 from api.v1.views import app_views
 from models import storage
 from models.amenity import Amenity
@@ -39,7 +39,7 @@ def del_place(place_id):
     place = storage.get(Place, place_id)
     if not place:
         abort(404)
-    obj.delete()
+    place.delete()
     storage.save()
     return jsonify({}), 200
 
